@@ -74,7 +74,7 @@ def lattice(parsed_beamline, nslice=1):
                 )
             else:
                 impactx_beamline.append(
-                    elements.Drift(ds=d["l"])
+                    elements.Drift(ds=d["l"], nslice=nslice)
                 )
                 print("Warning: Zero strength quad not supported. Replaced with drift")
         elif d["type"] == "sbend":
@@ -88,7 +88,7 @@ def lattice(parsed_beamline, nslice=1):
                 )
             else:
                 impactx_beamline.append(
-                    elements.Drift(ds=d["l"])
+                    elements.Drift(ds=d["l"], nslice=nslice)
                 )
                 print("Warning: Zero strength solenoid not supported. Replaced with drift")
         elif d["type"] == "dipedge":
@@ -102,26 +102,50 @@ def lattice(parsed_beamline, nslice=1):
                 )
             )
         elif d["type"] == "kicker":
-            impactx_beamline.append(
-                elements.Kicker(
-                    xkick=d["hkick"],
-                    ykick=d["vkick"],
+            if d['l'] > 0.0:
+                impactx_beamline.extend([
+                    elements.Drift(ds=d['l']/2., nslice=nslice),
+                    elements.Kicker(xkick=d["hkick"], ykick=d['vkick']),
+                    elements.Drift(ds=d['l']/2., nslice=nslice)
+                    ]
                 )
-            )
+            else:
+                impactx_beamline.append(
+                    elements.Kicker(
+                        xkick=d["hkick"],
+                        ykick=d["vkick"],
+                    )
+                )
         elif d["type"] == "vkicker":
-            impactx_beamline.append(
-                elements.Kicker(
-                    xkick=0.0,
-                    ykick=d['kick'],
+            if d['l'] > 0.0:
+                impactx_beamline.extend([
+                    elements.Drift(ds=d['l']/2., nslice=nslice),
+                    elements.Kicker(xkick=0.0, ykick=d['kick']),
+                    elements.Drift(ds=d['l']/2., nslice=nslice)
+                    ]
                 )
-            )
+            else:
+                impactx_beamline.append(
+                    elements.Kicker(
+                        xkick=0.0,
+                        ykick=d['kick'],
+                    )
+                )
         elif d["type"] == "hkicker":
-            impactx_beamline.append(
-                elements.Kicker(
-                    xkick=d['kick'],
-                    ykick=0.0,
+            if d['l'] > 0.0:
+                impactx_beamline.extend([
+                    elements.Drift(ds=d['l']/2., nslice=nslice),
+                    elements.Kicker(xkick=d["kick"], ykick=0.0),
+                    elements.Drift(ds=d['l']/2., nslice=nslice)
+                    ]
                 )
-            )
+            else:
+                impactx_beamline.append(
+                    elements.Kicker(
+                        xkick=d['kick'],
+                        ykick=0.0,
+                    )
+                )
         elif d["type"] == "monitor":
             if d["l"] > 0:
                 impactx_beamline.append(elements.Drift(ds=d["l"], nslice=nslice))
@@ -132,7 +156,10 @@ def lattice(parsed_beamline, nslice=1):
                 elements.Drift(ds=d['l'], nslice=nslice)
             )
         elif d["type"] == "marker":
-            print("Warning: Marker element dropped")
+            impactx_beamline.append(
+                elements.Drift(ds=0.0)
+                )
+            # print("Warning: Marker element dropped")
             # TODO: marker listed in madx_to_impactx_dict but it looks like it is not supported here
         elif d["type"] == "rfcavity":
             impactx_beamline.append(
@@ -177,7 +204,7 @@ def iterate_lattice(lattice_dict, beamline_map):
         if element in beamline_map:
             new_beamline = beamline_map[element]
             for sub_element in iterate_lattice(new_beamline, beamline_map):
-                yield sub_element
+                yield(sub_element)
         else:
             # yield element _id
             yield element
