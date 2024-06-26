@@ -34,8 +34,8 @@ __author__ = cxx.__author__
 # in pure Python or add some other Python logic
 
 # MAD-X file reader for beamline lattice elements
-elements.KnownElementsList.load_file = lambda self, madx_file, nslice=1: self.extend(
-    read_lattice(madx_file, nslice)
+elements.KnownElementsList.load_file = lambda self, madx_file, nslice=1, beamline=None: self.extend(
+    read_lattice(madx_file, nslice, beamline)
 )  # noqa
 
 # MAD-X file reader for reference particle
