@@ -7,7 +7,7 @@ ImpactX depends on the following popular third party software.
 Please see installation instructions below.
 
 - a mature `C++17 <https://en.wikipedia.org/wiki/C%2B%2B17>`__ compiler, e.g., GCC 8.4+, Clang 7, NVCC 11.0, MSVC 19.15 or newer
-- `CMake 3.20.0+ <https://cmake.org>`__
+- `CMake 3.24.0+ <https://cmake.org>`__
 - `Git 2.18+ <https://git-scm.com>`__
 - `AMReX <https://amrex-codes.github.io>`__: we automatically download and compile a copy
 - `ABLASTR/WarpX <https://github.com/ECP-WarpX/warpx>`__: we automatically download and compile a copy
@@ -35,6 +35,9 @@ Optional dependencies include:
   - `quantiphy <https://quantiphy.readthedocs.io/>`__
   - `openPMD-api <https://github.com/openPMD/openPMD-api>`__
   - see our ``requirements.txt`` file for compatible versions
+  - web browser/Jupyter Dashboard: `trame <https://kitware.github.io/trame/>`__
+
+    - see our ``src/python/impactx/dashboard/requirements.txt`` file for all packages
 
 If you are on a high-performance computing (HPC) system, then :ref:`please see our separate HPC documentation <install-hpc>`.
 
@@ -102,6 +105,12 @@ For OpenMP support, you will further need:
 
          conda install -c conda-forge llvm-openmp
 
+For the ImpactX browser/Jupyter dashboard dependencies, install from the ImpactX source directory:
+
+.. code-block:: bash
+
+   python3 -m pip install -r src/python/impactx/dashboard/requirements.txt
+
 
 Spack (Linux/macOS)
 -------------------
@@ -143,6 +152,12 @@ Now install the WarpX/ImpactX dependencies in a new development environment:
    # installation
    spack install
    python3 -m pip install jupyter matplotlib numpy openpmd-api openpmd-viewer pandas quantiphy scipy virtualenv yt
+
+For the ImpactX browser/Jupyter dashboard dependencies, install from the ImpactX source directory:
+
+.. code-block:: bash
+
+   python3 -m pip install -r src/python/impactx/dashboard/requirements.txt
 
 In new terminal sessions, re-activate the environment with
 

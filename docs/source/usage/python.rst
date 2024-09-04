@@ -5,8 +5,8 @@ Parameters: Python
 
 This documents on how to use ImpactX as a Python script (``python3 run_script.py``).
 
-General
--------
+Collective Effects & Overall Simulation Parameters
+--------------------------------------------------
 
 .. py:class:: impactx.ImpactX
 
@@ -66,6 +66,23 @@ General
 
       Whether to calculate space charge effects.
 
+   .. py:property:: poisson_solver
+
+      The numerical solver to solve the Poisson equation when calculating space charge effects.
+      Either ``"multigrid"`` (default) or ``"fft"``.
+
+      Currently, this is a 3D solver.
+      An additional `2D/2.5D solver <https://github.com/ECP-WarpX/impactx/issues/401>`__ will be added in the near future.
+
+      * ``fft``: Poisson's equation is solved using an Integrated Green Function method (which requires FFT calculations).
+        See these references for more details `Qiang et al. (2006) <https://doi.org/10.1103/PhysRevSTAB.9.044204>`__ (+ `Erratum <https://doi.org/10.1103/PhysRevSTAB.10.129901>`__).
+        This requires the compilation flag ``-DImpactX_FFT=ON``.
+        If mesh refinement (MR) is enabled, this FFT solver is used only on the coarsest level and a multi-grid solver is used on refined levels.
+        The boundary conditions are assumed to be open.
+
+      * ``multigrid``: Poisson's equation is solved using an iterative multigrid (MLMG) solver.
+        See the `AMReX documentation <https://amrex-codes.github.io/amrex/docs_html/LinearSolvers.html#>`__ for details of the MLMG solver.
+
    .. py:property:: mlmg_relative_tolerance
 
       Default: ``1.e-7``
@@ -98,6 +115,24 @@ General
       The verbosity used for MLMG solver for space-charge fields calculation.
       Currently MLMG solver looks for verbosity levels from 0-5.
       A higher number results in more verbose output.
+
+   .. py:property:: csr
+
+      Enable (``True``) or disable (``False``) space charge calculations (default: ``False``).
+
+      Whether to calculate Coherent Synchrotron Radiation (CSR) effects (default: disabled).
+      Currently, this is the 1D ultrarelativistic steady-state wakefield model (eq. 19 of
+      `E. L. Saldin et al, NIMA 398, p. 373-394 (1997), DOI:10.1016/S0168-9002(97)00822-X <https://doi.org/10.1016/S0168-9002(97)00822-X>`__).
+
+      .. note::
+
+         CSR effects are only calculated for lattice elements that include bending, such as ``Sbend``, ``ExactSbend`` and ``CFbend``.
+
+         CSR effects require the compilation flag ``-DImpactX_FFT=ON``.
+
+   .. py:property:: csr_bins
+
+      Enable or disable Coherent Synchrotron Radiation (CSR) calculations (default: ``150``).
 
    .. py:property:: diagnostics
 
@@ -150,7 +185,6 @@ General
    .. py:property:: periods
 
       The number of periods to repeat the lattice.
-
 
    .. py:property:: abort_on_warning_threshold
 
@@ -214,7 +248,7 @@ General
 
       .. warning::
 
-         By default, OpenMP spawns as many threads as there are available virtual cores on a host.
+         By default, OpenMP spawns as many threads as there are available physical CPU cores on a host.
          When MPI and OpenMP support are used at the same time, it can easily happen that one over-subscribes the available physical CPU cores.
          This will lead to a severe slow-down of the simulation.
 
@@ -339,9 +373,9 @@ Particles
 
       Read-only: Get reference particle :math:`\beta \cdot \gamma`
 
-   .. py:property:: qm_qeeV
+   .. py:property:: qm_ratio_SI
 
-      Read-only: Get reference particle charge to mass ratio (elementary charge/eV)
+      Read-only: Get reference particle charge to mass ratio (C/kg)
 
    .. py:method:: set_charge_qe(charge_qe)
 
@@ -417,7 +451,7 @@ This module provides particle beam distributions that can be used to initialize 
 
    A 6D Waterbag distribution.
 
-.. py:class:: impactx.distribution.Thermal(k, kT, kT_halo, normalize, normalize_halo, halo)
+.. py:class:: impactx.distribution.Thermal(k, kT, kT_halo, normalize, normalize_halo, halo=0.0)
 
    A 6D stationary thermal or bithermal distribution.
 
@@ -539,13 +573,13 @@ This module provides elements for the accelerator lattice.
    :param rotation: rotation error in the transverse plane [degrees]
    :param nslice: number of slices used for the application of space charge
 
-.. py:class:: impactx.elements.Kicker(xkick, ykick, units, dx=0, dy=0, rotation=0)
+.. py:class:: impactx.elements.Kicker(xkick, ykick, unit="dimensionless", dx=0, dy=0, rotation=0)
 
    A thin transverse kicker.
 
    :param xkick: horizontal kick strength (dimensionless OR T-m)
    :param ykick: vertical kick strength (dimensionless OR T-m)
-   :param units: specification of units (``"dimensionless"`` in units of the magnetic rigidity of the reference particle or ``"T-m"``)
+   :param unit: specification of units (``"dimensionless"`` in units of the magnetic rigidity of the reference particle or ``"T-m"``)
 
 .. py:class:: impactx.elements.Multipole(multipole, K_normal, K_skew, dx=0, dy=0, rotation=0)
 
@@ -675,19 +709,19 @@ This module provides elements for the accelerator lattice.
    :param rotation: rotation error in the transverse plane [degrees]
    :param nslice: number of slices used for the application of space charge
 
-.. py:class:: impactx.elements.ChrQuad(ds, k, units, dx=0, dy=0, rotation=0, nslice=1)
+.. py:class:: impactx.elements.ChrQuad(ds, k, unit=0, dx=0, dy=0, rotation=0, nslice=1)
 
    A Quadrupole magnet, with chromatic effects included.  The Hamiltonian is expanded
    through second order in the transverse variables (x,px,y,py), with the exact pt
    dependence retained.
 
    :param ds: Segment length in m.
-   :param k:  Quadrupole strength in m^(-2) (MADX convention, if units = 0)
+   :param k:  Quadrupole strength in m^(-2) (MADX convention, if unit = 0)
               = (gradient in T/m) / (rigidity in T-m)
-          OR  Quadrupole strength in T/m (MaryLie convention, if units = 1)
+          OR  Quadrupole strength in T/m (MaryLie convention, if unit = 1)
               k > 0 horizontal focusing
               k < 0 horizontal defocusing
-   :param units: specification of units for quadrupole field strength
+   :param unit: specification of units for quadrupole field strength
    :param dx: horizontal translation error in m
    :param dy: vertical translation error in m
    :param rotation: rotation error in the transverse plane [degrees]
@@ -697,21 +731,21 @@ This module provides elements for the accelerator lattice.
 
       quadrupole strength in 1/m^2 (or T/m)
 
-   .. py:property:: units
+   .. py:property:: unit
 
       unit specification for quad strength
 
-.. py:class:: impactx.elements.ChrPlasmaLens(ds, g, dx=0, dy=0, rotation=0, nslice=1)
+.. py:class:: impactx.elements.ChrPlasmaLens(ds, k, unit=0, dx=0, dy=0, rotation=0, nslice=1)
 
    An active cylindrically symmetric plasma lens, with chromatic effects included.
    The Hamiltonian is expanded through second order in the transverse variables
    (x,px,y,py), with the exact pt dependence retained.
 
    :param ds: Segment length in m.
-   :param k:  focusing strength in m^(-2) (if units = 0)
+   :param k:  focusing strength in m^(-2) (if unit = 0)
               = (azimuthal magnetic field gradient in T/m) / (rigidity in T-m)
-          OR  azimuthal magnetic field gradient in T/m (if units = 1)
-   :param units: specification of units for plasma lens focusing strength
+          OR  azimuthal magnetic field gradient in T/m (if unit = 1)
+   :param unit: specification of units for plasma lens focusing strength
    :param dx: horizontal translation error in m
    :param dy: vertical translation error in m
    :param rotation: rotation error in the transverse plane [degrees]
@@ -721,7 +755,7 @@ This module provides elements for the accelerator lattice.
 
       plasma lens focusing strength in 1/m^2 (or T/m)
 
-   .. py:property:: units
+   .. py:property:: unit
 
       unit specification for plasma lens focusing strength
 
@@ -750,7 +784,7 @@ This module provides elements for the accelerator lattice.
 
       magnetic field strength in 1/m
 
-.. py:class:: impactx.elements.RFCavity(ds, escale, freq, phase, dx=0, dy=0, rotation=0, mapsteps=1, nslice=1)
+.. py:class:: impactx.elements.RFCavity(ds, escale, freq, phase, cos_coefficients, sin_coefficients, dx=0, dy=0, rotation=0, mapsteps=1, nslice=1)
 
    A radiofrequency cavity.
 
@@ -779,7 +813,7 @@ This module provides elements for the accelerator lattice.
    :param rotation: rotation error in the transverse plane [degrees]
    :param nslice: number of slices used for the application of space charge
 
-.. py:class:: impactx.elements.ExactSbend(ds, phi, B, dx=0, dy=0, rotation=0, nslice=1)
+.. py:class:: impactx.elements.ExactSbend(ds, phi, B=0.0, dx=0, dy=0, rotation=0, nslice=1)
 
    An ideal sector bend using the exact nonlinear map.  The model consists of a uniform bending field B_y with a hard edge.  Pole faces are
    normal to the entry and exit velocity of the reference particle.
@@ -807,7 +841,7 @@ This module provides elements for the accelerator lattice.
    :param dy: vertical translation error in m
    :param rotation: rotation error in the transverse plane [degrees]
 
-.. py:class:: impactx.elements.ShortRF(V, freq, phase, dx=0, dy=0, rotation=0)
+.. py:class:: impactx.elements.ShortRF(V, freq, phase=-90.0, dx=0, dy=0, rotation=0)
 
    A short RF cavity element (MAD-X model).
 
@@ -818,35 +852,19 @@ This module provides elements for the accelerator lattice.
    :param dy: vertical translation error in m
    :param rotation: rotation error in the transverse plane [degrees]
 
-.. py:class:: impactx.elements.ChrUniformAcc(ds, k, dx=0, dy=0, rotation=0, nslice=1)
-
-   A region of constant Ez and Bz for uniform acceleration, with chromatic effects included.
-   The Hamiltonian is expanded through second order in the transverse variables (x,px,y,py),
-   with the exact pt dependence retained.
-
-   :param ds: Segment length in m.
-   :param ez: Electric field strength in m^(-1)
-              = (particle charge in C * field Ez in V/m) / (particle mass in kg * (speed of light in m/s)^2)
-   :param bz: Magnetic field strength in m^(-1)
-              = (particle charge in C * field Bz in T) / (particle mass in kg * speed of light in m/s)
-   :param dx: horizontal translation error in m
-   :param dy: vertical translation error in m
-   :param rotation: rotation error in the transverse plane [degrees]
-   :param nslice: number of slices used for the application of space charge
-
-.. py:class:: impactx.elements.SoftSolenoid(ds, bscale, cos_coefficients, sin_coefficients, dx=0, dy=0, rotation=0, mapsteps=1, nslice=1)
+.. py:class:: impactx.elements.SoftSolenoid(ds, bscale, cos_coefficients, sin_coefficients, unit=0, dx=0, dy=0, rotation=0, mapsteps=1, nslice=1)
 
    A soft-edge solenoid.
 
    :param ds: Segment length in m.
-   :param bscale: Scaling factor for on-axis magnetic field Bz in inverse meters (if units = 0)
+   :param bscale: Scaling factor for on-axis magnetic field Bz in inverse meters (if unit = 0)
               = (magnetic field Bz in T) / (rigidity in T-m)
-          OR  Magnetic field Bz in T (SI units, if units = 1)
+          OR  Magnetic field Bz in T (SI units, if unit = 1)
    :param cos_coefficients: array of ``float`` cosine coefficients in Fourier expansion of on-axis magnetic field Bz
             (optional); default is a thin-shell model from `DOI:10.1016/J.NIMA.2022.166706 <https://doi.org/10.1016/j.nima.2022.166706>`__
    :param sin_coefficients: array of ``float`` sine coefficients in Fourier expansion of on-axis magnetic field Bz
             (optional); default is a thin-shell model from `DOI:10.1016/J.NIMA.2022.166706 <https://doi.org/10.1016/j.nima.2022.166706>`__
-   :param units: specification of units for scaling of the on-axis longitudinal magnetic field
+   :param unit: specification of units for scaling of the on-axis longitudinal magnetic field
    :param dx: horizontal translation error in m
    :param dy: vertical translation error in m
    :param rotation: rotation error in the transverse plane [degrees]
@@ -870,9 +888,6 @@ This module provides elements for the accelerator lattice.
 
    :param phi_in: angle of the reference particle with respect to the longitudinal (z) axis in the original frame in degrees
    :param phi_out: angle of the reference particle with respect to the longitudinal (z) axis in the rotated frame in degrees
-   :param dx: horizontal translation error in m
-   :param dy: vertical translation error in m
-   :param rotation: rotation error in the transverse plane [degrees]
 
 .. py:class:: impactx.elements.Aperture(xmax, ymax, shape="rectangular", dx=0, dy=0, rotation=0)
 
@@ -927,7 +942,7 @@ This module provides elements for the accelerator lattice.
 
    * G. Ripken and F. Schmidt, Thin-Lens Formalism for Tracking, CERN/SL/95-12 (AP), 1995.
 
-.. py:class:: impactx.elements.TaperedPL(k, taper, units, dx=0, dy=0, rotation=0)
+.. py:class:: impactx.elements.TaperedPL(k, taper, unit=0, dx=0, dy=0, rotation=0)
 
    A thin nonlinear plasma lens with transverse (horizontal) taper
 
@@ -937,13 +952,13 @@ This module provides elements for the accelerator lattice.
 
    where :math:`g` is the (linear) field gradient in T/m and :math:`D_x` is the targeted horizontal dispersion in m.
 
-   :param k:  integrated focusing strength in m^(-1) (if units = 0)
+   :param k:  integrated focusing strength in m^(-1) (if unit = 0)
               = (length in m) * (magnetic field gradient :math:`g` in T/m) / (magnetic rigidity in T-m)
-          OR  integrated focusing strength in T (if units = 1)
+          OR  integrated focusing strength in T (if unit = 1)
               = (length in m) * (magnetic field gradient :math:`g` in T/m)
    :param taper: horizontal taper parameter in m^(-1)
               = 1 / (target horizontal dispersion :math:`D_x` in m)
-   :param units: specification of units for plasma lens focusing strength
+   :param unit: specification of units for plasma lens focusing strength
    :param dx: horizontal translation error in m
    :param dy: vertical translation error in m
    :param rotation: rotation error in the transverse plane [degrees]
@@ -956,7 +971,7 @@ This module provides elements for the accelerator lattice.
 
       horizontal taper parameter in 1/m
 
-   .. py:property:: units
+   .. py:property:: unit
 
       unit specification for plasma lens focusing strength
 

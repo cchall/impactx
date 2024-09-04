@@ -31,11 +31,17 @@ endif()
 # name: unique ImpactX test name
 # input: inputs file or Python script
 # is_mpi: run with mpirun?
-# is_python: run as a Python script?
 # analysis_script: an analysis script that validates test output
 # plot_script: a plot script that visualizes test output
 #
-function(add_impactx_test name input is_mpi is_python analysis_script plot_script)
+function(add_impactx_test name input is_mpi analysis_script plot_script)
+    # is this a Python script (ends in .py)
+    if(input MATCHES ".*\.py$")
+        set(is_python ON)
+    else()
+        set(is_python OFF)
+    endif()
+
     # cannot run Python tests w/o Python support
     if(is_python AND NOT ImpactX_PYTHON)
         return()
@@ -142,7 +148,6 @@ endfunction()
 add_impactx_test(FODO
     examples/fodo/input_fodo.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/fodo/analysis_fodo.py
     examples/fodo/plot_fodo.py
 )
@@ -152,7 +157,6 @@ add_impactx_test(FODO
 add_impactx_test(FODO.Twiss
         examples/fodo/input_fodo_twiss.in
         OFF  # ImpactX MPI-parallel
-        OFF  # ImpactX Python interface
         examples/fodo/analysis_fodo.py
         examples/fodo/plot_fodo.py
 )
@@ -162,7 +166,6 @@ add_impactx_test(FODO.Twiss
 add_impactx_test(FODO.MPI
     examples/fodo/input_fodo.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/fodo/analysis_fodo.py
     examples/fodo/plot_fodo.py
 )
@@ -172,7 +175,6 @@ add_impactx_test(FODO.MPI
 add_impactx_test(FODO.py
     examples/fodo/run_fodo.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/fodo/analysis_fodo.py
     examples/fodo/plot_fodo.py
 )
@@ -182,7 +184,6 @@ add_impactx_test(FODO.py
 add_impactx_test(FODO.programmable.py
     examples/fodo_programmable/run_fodo_programmable.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/fodo_programmable/analysis_fodo.py
     examples/fodo_programmable/plot_fodo.py
 )
@@ -196,7 +197,6 @@ file(COPY ${ImpactX_SOURCE_DIR}/examples/fodo/fodo.madx
 add_impactx_test(FODO.MADX.py
     examples/fodo/run_fodo_madx.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/fodo/analysis_fodo.py
     examples/fodo/plot_fodo.py
 )
@@ -206,7 +206,6 @@ add_impactx_test(FODO.MADX.py
 add_impactx_test(FODO.py.MPI
     examples/fodo/run_fodo.py
       ON  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/fodo/analysis_fodo.py
     examples/fodo/plot_fodo.py
 )
@@ -216,7 +215,6 @@ add_impactx_test(FODO.py.MPI
 add_impactx_test(chicane
     examples/chicane/input_chicane.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/chicane/analysis_chicane.py
     examples/chicane/plot_chicane.py
 )
@@ -226,7 +224,6 @@ add_impactx_test(chicane
 add_impactx_test(chicane.py
     examples/chicane/run_chicane.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/chicane/analysis_chicane.py
     examples/chicane/plot_chicane.py
 )
@@ -239,7 +236,6 @@ file(COPY ${ImpactX_SOURCE_DIR}/examples/chicane/chicane.madx DESTINATION ${CMAK
 add_impactx_test(chicane.MADX.py
     examples/chicane/run_chicane_madx.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/chicane/analysis_chicane.py
     examples/chicane/plot_chicane.py
 )
@@ -249,37 +245,49 @@ add_impactx_test(chicane.MADX.py
 add_impactx_test(cfchannel
     examples/cfchannel/input_cfchannel.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/cfchannel/analysis_cfchannel.py
     OFF  # no plot script yet
 )
 
 # Constant Focusing Channel with Space Charge #################################
 #
-add_impactx_test(cfchannel_spacecharge
-    examples/cfchannel/input_cfchannel_10nC.in
+add_impactx_test(cfchannel_spacecharge_mlmg
+    examples/cfchannel/input_cfchannel_10nC_mlmg.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/cfchannel/analysis_cfchannel_10nC.py
     OFF  # no plot script yet
 )
+if(ImpactX_FFT)
+    add_impactx_test(cfchannel_spacecharge_fft
+        examples/cfchannel/input_cfchannel_10nC_fft.in
+        OFF  # ImpactX MPI-parallel
+        examples/cfchannel/analysis_cfchannel_10nC.py
+        OFF  # no plot script yet
+    )
+endif()
 
 # Python: Constant Focusing Channel with Space Charge #########################
 #
-add_impactx_test(cfchannel_spacecharge.py
-    examples/cfchannel/run_cfchannel_10nC.py
+add_impactx_test(cfchannel_spacecharge_mlmg.py
+    examples/cfchannel/run_cfchannel_10nC_mlmg.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/cfchannel/analysis_cfchannel_10nC.py
     OFF  # no plot script yet
 )
+if(ImpactX_FFT)
+    add_impactx_test(cfchannel_spacecharge_fft.py
+        examples/cfchannel/run_cfchannel_10nC_fft.py
+        OFF  # ImpactX MPI-parallel
+        examples/cfchannel/analysis_cfchannel_10nC.py
+        OFF  # no plot script yet
+    )
+endif()
 
 # Python: Constant Focusing Channel ###########################################
 #
 add_impactx_test(cfchannel.py
     examples/cfchannel/run_cfchannel.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/cfchannel/analysis_cfchannel.py
     OFF  # no plot script yet
 )
@@ -289,7 +297,6 @@ add_impactx_test(cfchannel.py
 add_impactx_test(gaussian
     examples/distgen/input_gaussian.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/distgen/analysis_gaussian.py
     OFF  # no plot script yet
 )
@@ -299,7 +306,6 @@ add_impactx_test(gaussian
 add_impactx_test(kvdist
     examples/distgen/input_kvdist.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/distgen/analysis_kvdist.py
     OFF  # no plot script yet
 )
@@ -309,7 +315,6 @@ add_impactx_test(kvdist
 add_impactx_test(kvdist_from_twiss
         examples/distgen/input_kvdist_twiss.in
         OFF  # ImpactX MPI-parallel
-        OFF  # ImpactX Python interface
         examples/distgen/analysis_kvdist.py
         OFF  # no plot script yet
 )
@@ -319,7 +324,6 @@ add_impactx_test(kvdist_from_twiss
 add_impactx_test(FODO_RF
     examples/fodo_rf/input_fodo_rf.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/fodo_rf/analysis_fodo_rf.py
     OFF  # no plot script yet
 )
@@ -329,7 +333,6 @@ add_impactx_test(FODO_RF
 add_impactx_test(FODO_RF.py
     examples/fodo_rf/run_fodo_rf.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/fodo_rf/analysis_fodo_rf.py
     OFF  # no plot script yet
 )
@@ -339,7 +342,6 @@ add_impactx_test(FODO_RF.py
 add_impactx_test(kurth4d
     examples/distgen/input_kurth4d.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/distgen/analysis_kurth4d.py
     OFF  # no plot script yet
 )
@@ -349,7 +351,6 @@ add_impactx_test(kurth4d
 add_impactx_test(semigaussian
     examples/distgen/input_semigaussian.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/distgen/analysis_semigaussian.py
     OFF  # no plot script yet
 )
@@ -359,37 +360,49 @@ add_impactx_test(semigaussian
 add_impactx_test(multipole
     examples/multipole/input_multipole.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/multipole/analysis_multipole.py
     OFF  # no plot script yet
 )
 
 # Expanding Beam Test #########################################################
 #
-add_impactx_test(expanding_beam
-    examples/expanding_beam/input_expanding.in
+add_impactx_test(expanding_beam_mlmg
+    examples/expanding_beam/input_expanding_mlmg.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/expanding_beam/analysis_expanding.py
     OFF  # no plot script yet
 )
+if(ImpactX_FFT)
+    add_impactx_test(expanding_beam_fft
+        examples/expanding_beam/input_expanding_fft.in
+        OFF  # ImpactX MPI-parallel
+        examples/expanding_beam/analysis_expanding.py
+        OFF  # no plot script yet
+    )
+endif()
 
 # Python: Expanding Beam Test #################################################
 #
-add_impactx_test(expanding_beam.py
-    examples/expanding_beam/run_expanding.py
+add_impactx_test(expanding_beam_mlmg.py
+    examples/expanding_beam/run_expanding_mlmg.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/expanding_beam/analysis_expanding.py
     OFF  # no plot script yet
 )
+if(ImpactX_FFT)
+    add_impactx_test(expanding_beam_fft.py
+        examples/expanding_beam/run_expanding_fft.py
+        OFF  # ImpactX MPI-parallel
+        examples/expanding_beam/analysis_expanding.py
+        OFF  # no plot script yet
+    )
+endif()
 
 # Python: Chain of Multipoles Test ############################################
 #
 add_impactx_test(multipole.py
     examples/multipole/run_multipole.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/multipole/analysis_multipole.py
     OFF  # not plotting script yet
 )
@@ -399,7 +412,6 @@ add_impactx_test(multipole.py
 add_impactx_test(iotalens
     examples/iota_lens/input_iotalens.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/iota_lens/analysis_iotalens.py
     OFF  # no plot script yet
 )
@@ -409,7 +421,6 @@ add_impactx_test(iotalens
 add_impactx_test(iotalens.py
     examples/iota_lens/run_iotalens.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/iota_lens/analysis_iotalens.py
     OFF  # not plotting script yet
 )
@@ -419,7 +430,6 @@ add_impactx_test(iotalens.py
 add_impactx_test(iotalattice.MPI
     examples/iota_lattice/input_iotalattice.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/iota_lattice/analysis_iotalattice.py
     OFF  # no plot script yet
 )
@@ -429,7 +439,6 @@ add_impactx_test(iotalattice.MPI
 add_impactx_test(iotalattice.py.MPI
     examples/iota_lattice/run_iotalattice.py
       ON   # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/iota_lattice/analysis_iotalattice.py
     OFF  # no plot script yet
 )
@@ -440,14 +449,12 @@ add_impactx_test(iotalattice.py.MPI
 add_impactx_test(kurth_periodic
     examples/kurth/input_kurth_periodic.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/kurth/analysis_kurth_periodic.py
     OFF  # no plot script yet
 )
 add_impactx_test(kurth_periodic.py
     examples/kurth/run_kurth_periodic.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/kurth/analysis_kurth_periodic.py
     OFF  # no plot script yet
 )
@@ -456,14 +463,12 @@ add_impactx_test(kurth_periodic.py
 add_impactx_test(kurth_10nC_periodic
     examples/kurth/input_kurth_10nC_periodic.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/kurth/analysis_kurth_10nC_periodic.py
     OFF  # no plot script yet
 )
 add_impactx_test(kurth_10nC_periodic.py
     examples/kurth/run_kurth_10nC_periodic.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/kurth/analysis_kurth_10nC_periodic.py
     OFF  # no plot script yet
 )
@@ -473,7 +478,6 @@ add_impactx_test(kurth_10nC_periodic.py
 add_impactx_test(rfcavity.MPI
     examples/rfcavity/input_rfcavity.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/rfcavity/analysis_rfcavity.py
     OFF  # no plot script yet
 )
@@ -483,7 +487,6 @@ add_impactx_test(rfcavity.MPI
 add_impactx_test(rfcavity.py.MPI
     examples/rfcavity/run_rfcavity.py
       ON   # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/rfcavity/analysis_rfcavity.py
     OFF  # no plot script yet
 )
@@ -494,14 +497,12 @@ add_impactx_test(rfcavity.py.MPI
 add_impactx_test(solenoid
     examples/solenoid/input_solenoid.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/solenoid/analysis_solenoid.py
     OFF  # no plot script yet
 )
 add_impactx_test(solenoid.py
     examples/solenoid/run_solenoid.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/solenoid/analysis_solenoid.py
     OFF  # no plot script yet
 )
@@ -512,7 +513,6 @@ file(COPY ${ImpactX_SOURCE_DIR}/examples/solenoid/solenoid.madx
 add_impactx_test(solenoid.MADX.py
     examples/solenoid/run_solenoid_madx.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/solenoid/analysis_solenoid.py
     OFF  # no plot script yet
 )
@@ -523,14 +523,12 @@ add_impactx_test(solenoid.MADX.py
 add_impactx_test(rotation
     examples/rotation/input_rotation.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/rotation/analysis_rotation.py
     OFF  # no plot script yet
 )
 add_impactx_test(rotation.py
     examples/rotation/run_rotation.py
       ON   # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/rotation/analysis_rotation.py
     OFF  # no plot script yet
 )
@@ -541,14 +539,12 @@ add_impactx_test(rotation.py
 add_impactx_test(solenoid_softedge
     examples/solenoid_softedge/input_solenoid_softedge.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/solenoid_softedge/analysis_solenoid_softedge.py
     OFF  # no plot script yet
 )
 add_impactx_test(solenoid_softedge.py
     examples/solenoid_softedge/run_solenoid_softedge.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/solenoid_softedge/analysis_solenoid_softedge.py
     OFF  # no plot script yet
 )
@@ -559,14 +555,12 @@ add_impactx_test(solenoid_softedge.py
 add_impactx_test(quadrupole_softedge
     examples/quadrupole_softedge/input_quadrupole_softedge.in
       OFF  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/quadrupole_softedge/analysis_quadrupole_softedge.py
     OFF  # no plot script yet
 )
 add_impactx_test(quadrupole_softedge.py
     examples/quadrupole_softedge/run_quadrupole_softedge.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/quadrupole_softedge/analysis_quadrupole_softedge.py
     OFF  # no plot script yet
 )
@@ -577,14 +571,12 @@ add_impactx_test(quadrupole_softedge.py
 add_impactx_test(fodo_chromatic
     examples/fodo_chromatic/input_fodo_chr.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/fodo_chromatic/analysis_fodo_chr.py
     OFF  # no plot script yet
 )
 add_impactx_test(fodo_chromatic.py
     examples/fodo_chromatic/run_fodo_chr.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/fodo_chromatic/analysis_fodo_chr.py
     OFF  # no plot script yet
 )
@@ -595,14 +587,12 @@ add_impactx_test(fodo_chromatic.py
 add_impactx_test(positron_channel
     examples/positron_channel/input_positron.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/positron_channel/analysis_positron.py
     OFF  # no plot script yet
 )
 add_impactx_test(positron_channel.py
     examples/positron_channel/run_positron.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/positron_channel/analysis_positron.py
     OFF  # no plot script yet
 )
@@ -613,14 +603,12 @@ add_impactx_test(positron_channel.py
 add_impactx_test(cyclotron
     examples/cyclotron/input_cyclotron.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/cyclotron/analysis_cyclotron.py
     OFF  # no plot script yet
 )
 add_impactx_test(cyclotron.py
     examples/cyclotron/run_cyclotron.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/cyclotron/analysis_cyclotron.py
     OFF  # no plot script yet
 )
@@ -631,14 +619,12 @@ add_impactx_test(cyclotron.py
 add_impactx_test(cfbend
     examples/cfbend/input_cfbend.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/cfbend/analysis_cfbend.py
     OFF  # no plot script yet
 )
 add_impactx_test(cfbend.py
     examples/cfbend/run_cfbend.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/cfbend/analysis_cfbend.py
     OFF  # no plot script yet
 )
@@ -649,14 +635,12 @@ add_impactx_test(cfbend.py
 add_impactx_test(compression
     examples/compression/input_compression.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/compression/analysis_compression.py
     OFF  # no plot script yet
 )
 add_impactx_test(compression.py
     examples/compression/run_compression.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/compression/analysis_compression.py
     OFF  # no plot script yet
 )
@@ -667,14 +651,12 @@ add_impactx_test(compression.py
 add_impactx_test(kicker
     examples/kicker/input_kicker.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/kicker/analysis_kicker.py
     OFF  # no plot script yet
 )
 add_impactx_test(kicker.py
     examples/kicker/run_kicker.py
       OFF   # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/kicker/analysis_kicker.py
     OFF  # no plot script yet
 )
@@ -684,7 +666,6 @@ file(COPY ${ImpactX_SOURCE_DIR}/examples/kicker/kicker.madx
 add_impactx_test(kicker_madx.py
         examples/kicker/run_kicker_madx.py
         OFF   # ImpactX MPI-parallel
-        ON   # ImpactX Python interface
         examples/kicker/analysis_kicker.py
         OFF  # no plot script yet
 )
@@ -694,7 +675,6 @@ file(COPY ${ImpactX_SOURCE_DIR}/examples/kicker/hvkicker.madx
 add_impactx_test(hvkicker_madx.py
         examples/kicker/run_hvkicker_madx.py
         OFF   # ImpactX MPI-parallel
-        ON   # ImpactX Python interface
         examples/kicker/analysis_kicker.py
         OFF  # no plot script yet
 )
@@ -705,14 +685,12 @@ add_impactx_test(hvkicker_madx.py
 add_impactx_test(fodo_rf_sc
     examples/epac2004_benchmarks/input_fodo_rf_SC.in
       ON  # ImpactX MPI-parallel
-      OFF # ImpactX Python interface
     examples/epac2004_benchmarks/analysis_fodo_rf_SC.py
     OFF  # no plot script yet
 )
 add_impactx_test(fodo_rf_sc.py
     examples/epac2004_benchmarks/run_fodo_rf_SC.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/epac2004_benchmarks/analysis_fodo_rf_SC.py
     OFF  # no plot script yet
 )
@@ -723,7 +701,6 @@ add_impactx_test(fodo_rf_sc.py
 add_impactx_test(thermal
     examples/epac2004_benchmarks/input_thermal.in
       ON  # ImpactX MPI-parallel
-      OFF # ImpactX Python interface
     examples/epac2004_benchmarks/analysis_thermal.py
     OFF  # no plot script yet
 )
@@ -735,7 +712,6 @@ label_impactx_test(thermal slow)
 add_impactx_test(bithermal
     examples/epac2004_benchmarks/input_bithermal.in
       ON  # ImpactX MPI-parallel
-      OFF # ImpactX Python interface
     examples/epac2004_benchmarks/analysis_bithermal.py
     examples/epac2004_benchmarks/plot_bithermal.py
 )
@@ -746,7 +722,6 @@ add_impactx_test(bithermal
 add_impactx_test(bithermal.py
     examples/epac2004_benchmarks/run_bithermal.py
       ON  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/epac2004_benchmarks/analysis_bithermal.py
     examples/epac2004_benchmarks/plot_bithermal.py
 )
@@ -757,14 +732,12 @@ add_impactx_test(bithermal.py
 add_impactx_test(IOTA_nll
     examples/iota_lens/input_iotalens_sdep.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/iota_lens/analysis_iotalens_sdep.py
     OFF  # no plot script yet
 )
 add_impactx_test(IOTA_nll.py
     examples/iota_lens/run_iotalens_sdep.py
       OFF   # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/iota_lens/analysis_iotalens_sdep.py
     OFF  # no plot script yet
 )
@@ -775,14 +748,12 @@ add_impactx_test(IOTA_nll.py
 add_impactx_test(IOTA_lattice
     examples/iota_lattice/input_iotalattice_sdep.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/iota_lattice/analysis_iotalattice_sdep.py
     OFF  # no plot script yet
 )
 add_impactx_test(IOTA_lattice.py
     examples/iota_lattice/run_iotalattice_sdep.py
       OFF   # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/iota_lattice/analysis_iotalattice_sdep.py
     OFF  # no plot script yet
 )
@@ -793,14 +764,12 @@ add_impactx_test(IOTA_lattice.py
 add_impactx_test(thin_dipole
     examples/thin_dipole/input_thin_dipole.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/thin_dipole/analysis_thin_dipole.py
     OFF  # no plot script yet
 )
 add_impactx_test(thin_dipole.py
     examples/thin_dipole/run_thin_dipole.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/thin_dipole/analysis_thin_dipole.py
     OFF  # no plot script yet
 )
@@ -811,14 +780,12 @@ add_impactx_test(thin_dipole.py
 add_impactx_test(aperture
     examples/aperture/input_aperture.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/aperture/analysis_aperture.py
     OFF  # no plot script yet
 )
 add_impactx_test(aperture.py
     examples/aperture/run_aperture.py
       OFF  # ImpactX MPI-parallel
-      ON  # ImpactX Python interface
     examples/aperture/analysis_aperture.py
     OFF  # no plot script yet
 )
@@ -829,14 +796,12 @@ add_impactx_test(aperture.py
 add_impactx_test(apochromat
     examples/apochromatic/input_apochromatic.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/apochromatic/analysis_apochromatic.py
     OFF  # no plot script yet
 )
 add_impactx_test(apochromat.py
     examples/apochromatic/run_apochromatic.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/apochromatic/analysis_apochromatic.py
     OFF  # no plot script yet
 )
@@ -847,14 +812,12 @@ add_impactx_test(apochromat.py
 add_impactx_test(apochromat_pl
     examples/apochromatic/input_apochromatic_pl.in
       ON  # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/apochromatic/analysis_apochromatic_pl.py
     OFF  # no plot script yet
 )
 add_impactx_test(apochromat_pl.py
     examples/apochromatic/run_apochromatic_pl.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/apochromatic/analysis_apochromatic_pl.py
     OFF  # no plot script yet
 )
@@ -865,14 +828,12 @@ add_impactx_test(apochromat_pl.py
 add_impactx_test(alignment
     examples/alignment/input_alignment.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/alignment/analysis_alignment.py
     OFF  # no plot script yet
 )
 add_impactx_test(alignment.py
     examples/alignment/run_alignment.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/alignment/analysis_alignment.py
     OFF  # no plot script yet
 )
@@ -883,14 +844,12 @@ add_impactx_test(alignment.py
 add_impactx_test(fodo_tune
     examples/fodo_tune/input_fodo_tune.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/fodo_tune/analysis_fodo_tune.py
     OFF  # no plot script yet
 )
 add_impactx_test(fodo_tune.py
     examples/fodo_tune/run_fodo_tune.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/fodo_tune/analysis_fodo_tune.py
     OFF  # no plot script yet
 )
@@ -901,7 +860,6 @@ add_impactx_test(fodo_tune.py
 add_impactx_test(triplet.py
     examples/optimize_triplet/run_triplet.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/optimize_triplet/analysis_triplet.py
     examples/optimize_triplet/plot_triplet.py
 )
@@ -913,25 +871,55 @@ label_impactx_test(triplet.py slow)
 add_impactx_test(initialize_from_array.py
     examples/initialize_from_array/run_from_array.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/initialize_from_array/analyze_from_array.py
     examples/initialize_from_array/visualize_from_array.py
 )
 
-# Achromatic Spectrometer ########################################################
+# Achromatic Spectrometer ####################################################
 #
 # w/o space charge
 add_impactx_test(spectrometer
     examples/achromatic_spectrometer/input_spectrometer.in
       ON   # ImpactX MPI-parallel
-      OFF  # ImpactX Python interface
     examples/achromatic_spectrometer/analysis_spectrometer.py
     OFF  # no plot script yet
 )
 add_impactx_test(spectrometer.py
     examples/achromatic_spectrometer/run_spectrometer.py
       OFF  # ImpactX MPI-parallel
-      ON   # ImpactX Python interface
     examples/achromatic_spectrometer/analysis_spectrometer.py
+    OFF  # no plot script yet
+)
+
+# Chicane with CSR ###########################################################
+#
+if(ImpactX_FFT)
+    add_impactx_test(chicane_csr
+        examples/chicane/input_chicane_csr.in
+        OFF  # ImpactX MPI-parallel
+        examples/chicane/analysis_chicane_csr.py
+        OFF  # no plot script yet
+    )
+    add_impactx_test(chicane_csr.py
+        examples/chicane/run_chicane_csr.py
+        OFF  # ImpactX MPI-parallel
+        examples/chicane/analysis_chicane_csr.py
+        OFF  # no plot script yet
+    )
+endif()
+
+# Dogleg #####################################################################
+#
+# w/o space charge
+add_impactx_test(dogleg
+    examples/dogleg/input_dogleg.in
+      ON   # ImpactX MPI-parallel
+    examples/dogleg/analysis_dogleg.py
+    OFF  # no plot script yet
+)
+add_impactx_test(dogleg.py
+    examples/dogleg/run_dogleg.py
+      OFF  # ImpactX MPI-parallel
+    examples/dogleg/analysis_dogleg.py
     OFF  # no plot script yet
 )
