@@ -7,7 +7,7 @@
 # -*- coding: utf-8 -*-
 
 import warnings
-
+import math
 from impactx import RefPart, elements
 
 from .MADXParser import MADXParser
@@ -162,16 +162,15 @@ def lattice(parsed_beamline, nslice=1):
             # print("Warning: Marker element dropped")
             # TODO: marker listed in madx_to_impactx_dict but it looks like it is not supported here
         elif d["type"] == "rfcavity":
-            impactx_beamline.append(
-                #elements.RFCavity(
-                #    ds=d["l"],
-                #    escale=0.0,  # TODO: This cannot be set without reference particle information
-                #    freq=d.get('freq', 0.0),  # If madx rfcavity uses harm this must be set after beamline created and with ref particle info
-                #    phase=d['lag'],  # TODO: no idea if madx and impactx use same phase convention
-                #    cos_coefficients=[0.0,],  # TODO: docs suggest these are optional and have defaults. Code disagrees.
-                #    sin_coefficients=[0.0,]   # "
-                #)
-                elements.Drift(ds=d["l"])
+            impactx_beamline.extend([
+                elements.Drift(ds=d["l"]/2., nslice=nslice),
+                elements.ShortRF(
+                    V=d['volt'],  # (in MV from MAD-X) -  impactx normalizes by mc^2 so we have to set with beam information after
+                    freq=d.get('freq') if d.get('freq') is not None else -d['harm'],  # Use negative value to flag processing harmonic
+                    phase=-180*d['lag'],
+                ),
+                elements.Drift(ds=d["l"]/2., nslice=nslice),
+                ]
             )
             if d.get('harmon'):
                 print("Warning: Cavity freq cannot be set from harm automatically")
